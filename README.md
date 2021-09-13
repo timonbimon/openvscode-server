@@ -31,8 +31,8 @@ docker run -it --init -p 3000:3000 -v "$(pwd):/home/workspace:cached" gitpod/vsc
 - [Download the latest release](https://github.com/gitpod-io/vscode-releases/releases/latest)
 - untar and run the server:
 ```bash
-tar -xzf code-web-server-v*.tar.gz
-cd code-web-server-v*
+tar -xzf openvscode-server-v*.tar.gz
+cd openvscode-server-v*-x64
 ./server.sh
 ```
 - after this, visit [localhost:3000](http://localhost:3000).
