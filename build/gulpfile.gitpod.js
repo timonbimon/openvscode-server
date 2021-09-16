@@ -88,12 +88,16 @@ for (const extensionName of marketplaceExtensions) {
 	const bundleExtension = task.define('gitpod:bundle-extension:' + extensionName, task.series(
 		cleanExtension,
 		bumpExtension,
-		() =>
-			ext.minifyExtensionResources(
-				ext.fromLocal(path.join(extensionsPath, extensionName), false)
+		() => {
+			let extStream = ext.fromLocal(path.join(extensionsPath, extensionName), false);
+			if (extensionName === 'gitpod') {
+				extStream = es.merge(extStream, ext.fromLocal(path.join(extensionsPath, extensionName), true));
+			}
+			return ext.minifyExtensionResources(
+				extStream
 					.pipe(rename(p => p.dirname = `${extensionName}/${p.dirname}`))
-			).pipe(gulp.dest(outMarketplaceExtensions))
-	));
+			).pipe(gulp.dest(outMarketplaceExtensions));
+		}));
 	gulp.task(bundleExtension);
 	const publishExtension = task.define('gitpod:publish-extension:' + extensionName, task.series(
 		bundleExtension,

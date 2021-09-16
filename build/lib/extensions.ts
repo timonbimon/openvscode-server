@@ -74,6 +74,9 @@ export function fromLocal(extensionPath: string, forWeb: boolean): Stream {
 			if (data.main) {
 				data.main = data.main.replace('/out/', /dist/);
 			}
+			if (data.browser) {
+				data.browser = data.browser.replace('/out/', /dist/);
+			}
 			return data;
 		});
 	}

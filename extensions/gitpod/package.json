@@ -24,13 +24,20 @@
 		"remote development",
 		"remote"
 	],
-	"extensionKind": [
-		"ui"
-	],
 	"activationEvents": [
 		"*",
-		"onCommand:gitpod.api.autoTunnel"
+		"onCommand:gitpod.api.autoTunnel",
+		"onCommand:gitpod.api.auth"
 	],
+	"contributes": {
+		"commands": [
+			{
+				"command": "gitpod.api.auth",
+				"title": "Authenthicate with GitPod"
+			}
+		]
+	},
+	"browser": "./out/browser/extension.js",
 	"main": "./out/extension.js",
 	"scripts": {
 		"compile": "gulp compile-extension:gitpod",
@@ -49,7 +56,7 @@
 		"tmp": "^0.2.1",
 		"vscode-nls": "^5.0.0"
 	},
-	"extensionDependencies": [
+	"extensionPack": [
 		"ms-vscode-remote.remote-ssh"
 	]
 }
