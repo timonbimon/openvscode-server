@@ -27,7 +27,8 @@
 	"activationEvents": [
 		"*",
 		"onCommand:gitpod.api.autoTunnel",
-		"onCommand:gitpod.api.auth"
+		"onCommand:gitpod.api.auth",
+		"onAuthenticationRequest:gitpod"
 	],
 	"contributes": {
 		"commands": [
@@ -52,6 +53,7 @@
 	"dependencies": {
 		"@gitpod/local-app-api-grpcweb": "main",
 		"@improbable-eng/grpc-web-node-http-transport": "^0.14.0",
+		"client-oauth2": "^4.3.3",
 		"node-fetch": "^2.6.1",
 		"tmp": "^0.2.1",
 		"vscode-nls": "^5.0.0"
