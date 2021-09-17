@@ -9,6 +9,8 @@ import * as vscode from 'vscode';
 import ClientOAuth2 from 'client-oauth2';
 import crypto from 'crypto';
 
+const authCompletePath = '/auth-complete';
+
 export function registerAuth(context: GitpodExtensionContext): void {
 	async function resolveAuthenticationSession(data: any, resolveUser: any): Promise<vscode.AuthenticationSession> {
 		const needsUserInfo = !data.account;
@@ -57,7 +59,7 @@ export function registerAuth(context: GitpodExtensionContext): void {
 				];
 				const baseURL = 'https://gitpod.io';
 
-				const callbackUri = `${vscode.env.uriScheme}://gitpod.gitpod-desktop/auth/callback`;
+				const callbackUri = `${vscode.env.uriScheme}://gitpod.gitpod-desktop${authCompletePath}`;
 
 				const stateConstant = crypto.randomBytes(32);
 				const gitpodAuth = new ClientOAuth2({
@@ -70,6 +72,10 @@ export function registerAuth(context: GitpodExtensionContext): void {
 					state: stateConstant.toString('hex')
 				});
 
+				// Store the state in the secrets store (for checking later)
+				await context.secrets.store(`${vscode.env.uriScheme}-gitpod.state`, stateConstant.toString('hex'));
+
+				// Open the authorization URL in the default browser
 				await vscode.env.openExternal(vscode.Uri.parse(gitpodAuth.code.getUri()));
 
 				/*
@@ -119,11 +125,17 @@ export async function activate(context: vscode.ExtensionContext) {
 		output.appendLine(`[${new Date().toLocaleString()}] ${value}`);
 	}
 
-	const authCompletePath = '/auth-complete';
 	context.subscriptions.push(vscode.window.registerUriHandler({
 		handleUri: async uri => {
 			if (uri.path === authCompletePath) {
-				log('auth completed');
+				const state = await context.secrets.get(`${vscode.env.uriScheme}-gitpod.state`);
+				await context.secrets.delete(`${vscode.env.uriScheme}-gitpod.state`);
+				if (state) {
+					log('auth completed');
+				} else {
+					throw new Error('auth failed (missing or incorrect state parameter)');
+				}
+
 				return;
 			}
 			log(`open workspace window: ${uri.toString()}`);
