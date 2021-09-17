@@ -5,9 +5,9 @@
 /// <reference path='../../../../src/vs/vscode.d.ts'/>
 
 import { GitpodExtensionContext } from 'gitpod-shared';
-import * as util from 'util';
 import * as vscode from 'vscode';
 import ClientOAuth2 from 'client-oauth2';
+import crypto from 'crypto';
 
 export function registerAuth(context: GitpodExtensionContext): void {
 	async function resolveAuthenticationSession(data: any, resolveUser: any): Promise<vscode.AuthenticationSession> {
@@ -59,18 +59,20 @@ export function registerAuth(context: GitpodExtensionContext): void {
 
 				const callbackUri = `${vscode.env.uriScheme}://gitpod.gitpod-desktop/auth/callback`;
 
-
+				const stateConstant = crypto.randomBytes(32);
 				const gitpodAuth = new ClientOAuth2({
 					clientId: 'gplctl-1.0',
 					clientSecret: 'gplctl-1.0-secret',
 					accessTokenUri: `${baseURL}/api/oauth/token`,
 					authorizationUri: `${baseURL}/api/oauth/authorize`,
 					redirectUri: callbackUri,
-					scopes: scopes
+					scopes: scopes,
+					state: stateConstant.toString('hex')
 				});
 
 				await vscode.env.openExternal(vscode.Uri.parse(gitpodAuth.code.getUri()));
 
+				/*
 				const getTokenResponse = await util.promisify(context.supervisor.token.getToken.bind(context.supervisor.token, getTokenRequest, context.supervisor.metadata, {
 					deadline: Date.now() + 30_000
 				}))();
@@ -84,6 +86,7 @@ export function registerAuth(context: GitpodExtensionContext): void {
 				}, resolveGitpodUser);
 				sessions.push(session);
 				onDidChangeSessionsEmitter.fire({ added: [session] });
+				*/
 			}
 		} catch (e) {
 			console.error('Failed to restore Gitpod session:', e);
