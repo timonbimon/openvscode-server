@@ -2,16 +2,16 @@
  *  Copyright (c) Gitpod. All rights reserved.
  *--------------------------------------------------------------------------------------------*/
 
-/// <reference path='../../../../src/vs/vscode.d.ts'/>
+/// <reference path='../../../src/vs/vscode.d.ts'/>
 
-import { GitpodExtensionContext } from 'gitpod-shared';
-import * as vscode from 'vscode';
 import ClientOAuth2 from 'client-oauth2';
+import * as vscode from 'vscode';
 import crypto from 'crypto';
+import { GitpodExtensionContext } from 'gitpod-shared';
 
 const authCompletePath = '/auth-complete';
 
-export function registerAuth(context: GitpodExtensionContext): void {
+export default function registerAuth(context: GitpodExtensionContext): void {
 	async function resolveAuthenticationSession(data: any, resolveUser: any): Promise<vscode.AuthenticationSession> {
 		const needsUserInfo = !data.account;
 		const userInfo = needsUserInfo ? await resolveUser(data) : undefined;
@@ -27,9 +27,11 @@ export function registerAuth(context: GitpodExtensionContext): void {
 			accessToken: data.accessToken
 		};
 	}
+
 	function hasScopes(session: vscode.AuthenticationSession, scopes?: readonly string[]): boolean {
 		return !scopes || scopes.every(scope => session.scopes.includes(scope));
 	}
+
 	//#endregion
 
 	//#region gitpod auth
@@ -41,7 +43,7 @@ export function registerAuth(context: GitpodExtensionContext): void {
 				const owner = await context.owner;
 				return {
 					id: owner.id,
-					accountName: owner.name!
+					accountName: owner.name,
 				};
 			};
 			if (vscode.env.uiKind === vscode.UIKind.Web) {
@@ -78,21 +80,6 @@ export function registerAuth(context: GitpodExtensionContext): void {
 				// Open the authorization URL in the default browser
 				await vscode.env.openExternal(vscode.Uri.parse(gitpodAuth.code.getUri()));
 
-				/*
-				const getTokenResponse = await util.promisify(context.supervisor.token.getToken.bind(context.supervisor.token, getTokenRequest, context.supervisor.metadata, {
-					deadline: Date.now() + 30_000
-				}))();
-				const accessToken = getTokenResponse.getToken();
-				const session = await resolveAuthenticationSession({
-					// current session ID should remain stable between window reloads
-					// otherwise setting sync will log out
-					id: 'gitpod-current-session',
-					accessToken,
-					scopes
-				}, resolveGitpodUser);
-				sessions.push(session);
-				onDidChangeSessionsEmitter.fire({ added: [session] });
-				*/
 			}
 		} catch (e) {
 			console.error('Failed to restore Gitpod session:', e);
@@ -118,46 +105,3 @@ export function registerAuth(context: GitpodExtensionContext): void {
 	})());
 	//#endregion gitpod auth
 }
-
-export async function activate(context: vscode.ExtensionContext) {
-	const output = vscode.window.createOutputChannel('Gitpod');
-	function log(value: string) {
-		output.appendLine(`[${new Date().toLocaleString()}] ${value}`);
-	}
-
-	context.subscriptions.push(vscode.window.registerUriHandler({
-		handleUri: async uri => {
-			if (uri.path === authCompletePath) {
-				const state = await context.secrets.get(`${vscode.env.uriScheme}-gitpod.state`);
-				await context.secrets.delete(`${vscode.env.uriScheme}-gitpod.state`);
-				if (state) {
-					log('auth completed');
-				} else {
-					throw new Error('auth failed (missing or incorrect state parameter)');
-				}
-
-				return;
-			}
-			log(`open workspace window: ${uri.toString()}`);
-		}
-	}));
-
-	context.subscriptions.push(vscode.commands.registerCommand('gitpod.api.auth', async () => {
-		log('Executing auth command');
-		context.subscriptions.push(
-			vscode.commands.registerCommand(`gitpod.api.signin`, async () => {
-				// Get an externally addressable callback URI for the handler that the authentication provider can use
-				const callbackUri = await vscode.env.asExternalUri(
-					vscode.Uri.parse(`${vscode.env.uriScheme}://gitpod/auth-complete`)
-				);
-
-				vscode.env.clipboard.writeText(callbackUri.toString());
-				await vscode.window.showInformationMessage(
-					'Open the URI copied to the clipboard in a browser window to authorize.'
-				);
-			})
-		);
-	}));
-}
-
-export function deactivate() { }

@@ -38,7 +38,6 @@
 			}
 		]
 	},
-	"browser": "./out/browser/extension.js",
 	"main": "./out/extension.js",
 	"scripts": {
 		"compile": "gulp compile-extension:gitpod",

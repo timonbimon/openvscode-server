@@ -17,6 +17,8 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { grpc } from '@improbable-eng/grpc-web';
 
+import registerAuth from './registerAuth';
+
 interface SSHConnectionParams {
 	workspaceId: string
 	instanceId: string
@@ -42,10 +44,57 @@ interface LocalAppInstallation {
 	etag: string | null
 }
 
+const authCompletePath = '/auth-complete';
+
 export async function activate(context: vscode.ExtensionContext) {
 	const output = vscode.window.createOutputChannel('Gitpod');
 	function log(value: string) {
 		output.appendLine(`[${new Date().toLocaleString()}] ${value}`);
+	}
+
+	log(`Running in remote: ${vscode.env.remoteName}, extensionKind: ${context.extension.extensionKind}`);
+
+	// Run code only in a remote environment (SSH, GitPod, OpenVSCodeServer)
+	if (context.extension.extensionKind === vscode.ExtensionKind.Workspace && vscode.env.remoteName !== undefined) {
+
+		registerAuth(context);
+
+		log('Registering the URI handler');
+		context.subscriptions.push(vscode.window.registerUriHandler({
+			handleUri: async uri => {
+				if (uri.path === authCompletePath) {
+					const state = await context.secrets.get(`${vscode.env.uriScheme}-gitpod.state`);
+					await context.secrets.delete(`${vscode.env.uriScheme}-gitpod.state`);
+					if (state) {
+						log('auth completed');
+					} else {
+						throw new Error('auth failed (missing or incorrect state parameter)');
+					}
+
+					return;
+				}
+				log(`open workspace window: ${uri.toString()}`);
+			}
+		}));
+
+		log('Registering the auth command');
+		context.subscriptions.push(vscode.commands.registerCommand('gitpod.api.auth', async () => {
+			log('Executing auth command');
+			context.subscriptions.push(
+				vscode.commands.registerCommand(`gitpod.api.signin`, async () => {
+					// Get an externally addressable callback URI for the handler that the authentication provider can use
+					const callbackUri = await vscode.env.asExternalUri(
+						vscode.Uri.parse(`${vscode.env.uriScheme}://gitpod/auth-complete`)
+					);
+
+					vscode.env.clipboard.writeText(callbackUri.toString());
+					await vscode.window.showInformationMessage(
+						'Open the URI copied to the clipboard in a browser window to authorize.'
+					);
+				})
+			);
+		}));
+		return;
 	}
 
 	// TODO(ak) commands to show logs and stop local apps
@@ -376,7 +425,6 @@ export async function activate(context: vscode.ExtensionContext) {
 		}
 	}
 
-	const authCompletePath = '/auth-complete';
 	context.subscriptions.push(vscode.window.registerUriHandler({
 		handleUri: async uri => {
 			if (uri.path === authCompletePath) {
