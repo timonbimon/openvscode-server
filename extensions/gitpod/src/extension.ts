@@ -17,7 +17,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { grpc } from '@improbable-eng/grpc-web';
 
-import { registerAuth } from './registerAuth';
+import { registerAuth, authCompletePath } from './registerAuth';
 
 interface SSHConnectionParams {
 	workspaceId: string
@@ -43,8 +43,6 @@ interface LocalAppInstallation {
 	path: string
 	etag: string | null
 }
-
-const authCompletePath = '/auth-complete';
 
 export async function activate(context: vscode.ExtensionContext) {
 	const output = vscode.window.createOutputChannel('Gitpod');
