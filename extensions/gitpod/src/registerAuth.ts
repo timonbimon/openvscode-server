@@ -11,7 +11,7 @@ import { GitpodExtensionContext } from 'gitpod-shared';
 
 const authCompletePath = '/auth-complete';
 
-export default function registerAuth(context: GitpodExtensionContext): void {
+export function registerAuth(context: GitpodExtensionContext): void {
 	async function resolveAuthenticationSession(data: any, resolveUser: any): Promise<vscode.AuthenticationSession> {
 		const needsUserInfo = !data.account;
 		const userInfo = needsUserInfo ? await resolveUser(data) : undefined;

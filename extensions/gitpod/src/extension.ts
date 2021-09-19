@@ -17,7 +17,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { grpc } from '@improbable-eng/grpc-web';
 
-import registerAuth from './registerAuth';
+import { registerAuth } from './registerAuth';
 
 interface SSHConnectionParams {
 	workspaceId: string
