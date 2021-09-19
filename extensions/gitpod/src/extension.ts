@@ -16,6 +16,7 @@ import * as tmp from 'tmp';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { grpc } from '@improbable-eng/grpc-web';
+import { URLSearchParams } from 'url';
 
 import { registerAuth, authCompletePath } from './registerAuth';
 
@@ -59,12 +60,19 @@ export async function activate(context: vscode.ExtensionContext) {
 
 		log('Registering the URI handler');
 		context.subscriptions.push(vscode.window.registerUriHandler({
-			handleUri: async uri => {
+			handleUri: async (uri): Promise<void> => {
 				if (uri.path === authCompletePath) {
-					log('auth completed');
+					// Get the token from the URI
+					const token = new URLSearchParams(uri.query).get('token');
+					if (token !== null) {
+						// Store the token
+						await context.secrets.store('gitpod.token', token);
+						log('auth completed');
+					} else {
+						vscode.window.showErrorMessage('Auth failed: missing token');
+					}
 					return;
 				}
-				log(`open workspace window: ${uri.toString()}`);
 			}
 		}));
 
