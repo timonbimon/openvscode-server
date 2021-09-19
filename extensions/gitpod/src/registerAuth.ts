@@ -6,7 +6,6 @@
 
 import ClientOAuth2 from 'client-oauth2';
 import * as vscode from 'vscode';
-import crypto from 'crypto';
 import { GitpodExtensionContext } from 'gitpod-shared';
 
 const authCompletePath = '/auth-complete';
@@ -63,7 +62,6 @@ export function registerAuth(context: GitpodExtensionContext): void {
 
 				const callbackUri = `${vscode.env.uriScheme}://gitpod.gitpod-desktop${authCompletePath}`;
 
-				const stateConstant = crypto.randomBytes(32);
 				const gitpodAuth = new ClientOAuth2({
 					clientId: 'gplctl-1.0',
 					clientSecret: 'gplctl-1.0-secret',
@@ -71,11 +69,7 @@ export function registerAuth(context: GitpodExtensionContext): void {
 					authorizationUri: `${baseURL}/api/oauth/authorize`,
 					redirectUri: callbackUri,
 					scopes: scopes,
-					state: stateConstant.toString('hex')
 				});
-
-				// Store the state in the secrets store (for checking later)
-				await context.secrets.store(`${vscode.env.uriScheme}-gitpod.state`, stateConstant.toString('hex'));
 
 				// Open the authorization URL in the default browser
 				await vscode.env.openExternal(vscode.Uri.parse(gitpodAuth.code.getUri()));

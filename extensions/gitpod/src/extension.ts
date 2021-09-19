@@ -63,14 +63,7 @@ export async function activate(context: vscode.ExtensionContext) {
 		context.subscriptions.push(vscode.window.registerUriHandler({
 			handleUri: async uri => {
 				if (uri.path === authCompletePath) {
-					const state = await context.secrets.get(`${vscode.env.uriScheme}-gitpod.state`);
-					await context.secrets.delete(`${vscode.env.uriScheme}-gitpod.state`);
-					if (state) {
-						log('auth completed');
-					} else {
-						throw new Error('auth failed (missing or incorrect state parameter)');
-					}
-
+					log('auth completed');
 					return;
 				}
 				log(`open workspace window: ${uri.toString()}`);
